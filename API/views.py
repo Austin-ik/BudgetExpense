@@ -1,8 +1,10 @@
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from API.mixins import UserOwnedQuerysetMixin
 from API.models import Budget, Expense, User
 from .serializers import BudgetSerializer, CustomTokenObtainPairSerializer, ExpenseSerializer, RemainingBudgetSerializer, TotalExpensesSerializer, UserSerializer
 from rest_framework.response import Response
+from django.core.exceptions import PermissionDenied
 from rest_framework import status, generics
 from rest_framework.serializers import ValidationError
 from django.db.models import Sum
@@ -31,11 +33,13 @@ class UserRegistrationAPIView(generics.CreateAPIView):
         return Response(response_data, status=status.HTTP_201_CREATED)
 
 
-class ExpenseListCreateView(generics.ListCreateAPIView):
+class ExpenseListCreateView(UserOwnedQuerysetMixin, generics.ListCreateAPIView):
     serializer_class = ExpenseSerializer
+    model = Expense
+    queryset = Expense.objects.all()
 
-    def get_queryset(self):
-        return Expense.objects.filter(user=self.request.user)
+    # def get_queryset(self):
+    #     return Expense.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -46,16 +50,20 @@ class ExpenseListCreateView(generics.ListCreateAPIView):
 
 class ExpenseRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ExpenseSerializer
+    queryset = Expense.objects.all()
 
-    def get_queryset(self):
-        return Expense.objects.filter(user=self.request.user)
+    # def get_queryset(self):
+    #     return Expense.objects.filter(user=self.request.user)
 
 
-class BudgetListCreateView(generics.ListCreateAPIView):
+class BudgetListCreateView(UserOwnedQuerysetMixin, generics.ListCreateAPIView):
     serializer_class = BudgetSerializer
+    model = Budget
+    queryset = Budget.objects.all()
 
-    def get_queryset(self):
-        return Budget.objects.filter(user=self.request.user)
+
+    # def get_queryset(self):
+    #     return Budget.objects.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -80,9 +88,10 @@ class BudgetListCreateView(generics.ListCreateAPIView):
 
 class BudgetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = BudgetSerializer
+    queryset = Budget.objects.all()
 
-    def get_queryset(self):
-        return Budget.objects.filter(user=self.request.user)
+    # def get_queryset(self):
+    #     return Budget.objects.filter(user=self.request.user)
 
 
 class TotalExpensesAPIView(generics.GenericAPIView):
